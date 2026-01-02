@@ -84,9 +84,9 @@ jobs:
           cat <<EOF > ~/.databrickscfg
           [PROD]
           host = https://adb-7405619693860699.19.azuredatabricks.net/
-          azure_client_id = ${{ secrets.AZURE_CLIENT_ID_PROD }}
-          azure_tenant_id = ${{ secrets.AZURE_TENANT_ID_PROD }}
-          azure_client_secret = ${{ secrets.AZURE_CLIENT_SECRET_PROD }}
+          azure_client_id = ${{ secrets.AZURE_CLIENT_ID}}
+          azure_tenant_id = ${{ secrets.AZURE_TENANT_ID}}
+          azure_client_secret = ${{ secrets.AZURE_CLIENT_SECRET}}
           EOF
 
       # 6️⃣ Deploy to PROD
