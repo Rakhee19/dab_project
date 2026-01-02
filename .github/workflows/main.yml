@@ -1,0 +1,95 @@
+name: CD – workflow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  cd-deploy-test:
+    name: Deploy to Test
+    runs-on: ubuntu-latest
+    environment: test
+
+    steps:
+      # 1️⃣ Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2️⃣ Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 3️⃣ Install Databricks CLI
+      - name: Install Databricks CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+
+      # 4️⃣ Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel
+
+      # 5️⃣ Configure Databricks (TEST)
+      - name: Configure Databricks (TEST)
+        run: |
+          cat <<EOF > ~/.databrickscfg
+          [TEST]
+          host = https://adb-7405606341957605.5.azuredatabricks.net
+          azure_client_id = ${{ secrets.AZURE_CLIENT_ID }}
+          azure_tenant_id = ${{ secrets.AZURE_TENANT_ID }}
+          azure_client_secret = ${{ secrets.AZURE_CLIENT_SECRET }}
+          EOF
+
+      # 6️⃣ Deploy to TEST
+      - name: Deploy to TEST
+        run: |
+          databricks bundle deploy -t test -p TEST
+
+
+  cd-deploy-prod:
+    name: Deploy to Prod
+    runs-on: ubuntu-latest
+    needs: cd-deploy-test     # waits for TEST job to succeed
+    environment: prod         # enable approval in GitHub Environments
+
+    steps:
+      # 1️⃣ Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2️⃣ Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 3️⃣ Install Databricks CLI
+      - name: Install Databricks CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+
+      # 4️⃣ Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel
+
+      # 5️⃣ Configure Databricks (PROD)
+      - name: Configure Databricks (PROD)
+        run: |
+          cat <<EOF > ~/.databrickscfg
+          [PROD]
+          host = https://adb-7405619693860699.19.azuredatabricks.net/
+          azure_client_id = ${{ secrets.AZURE_CLIENT_ID_PROD }}
+          azure_tenant_id = ${{ secrets.AZURE_TENANT_ID_PROD }}
+          azure_client_secret = ${{ secrets.AZURE_CLIENT_SECRET_PROD }}
+          EOF
+
+      # 6️⃣ Deploy to PROD
+      - name: Deploy to PROD
+        run: |
+          databricks bundle deploy -t prod -p PROD
